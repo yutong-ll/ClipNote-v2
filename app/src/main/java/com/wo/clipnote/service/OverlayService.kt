@@ -9,6 +9,7 @@ import android.view.Gravity
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -30,6 +31,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.wo.clipnote.InputActivity
 
 // 继承自 Android 底层的 Service 类，相当于在后台跑一个独立线程
 class OverlayService : Service() {
@@ -79,7 +81,14 @@ class OverlayService : Service() {
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF6650a4)), // 我们的主题紫
+                        .background(Color(0xFF6650a4))
+                        // 核心：添加点击事件
+                        .clickable {
+                            // 这里是点击后的动作
+                            val intent = Intent(this@OverlayService, InputActivity::class.java)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Text("记", color = Color.White)
