@@ -1,5 +1,6 @@
 package com.wo.clipnote.service
 
+import android.animation.ValueAnimator
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
@@ -10,6 +11,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -31,63 +34,100 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+
+// 注意：如果你还没有创建 InputActivity，下面这行点击跳转的代码会标红。
+// 请确保你在 com.wo.clipnote 包下创建了 InputActivity.kt
 import com.wo.clipnote.InputActivity
 
-// 继承自 Android 底层的 Service 类，相当于在后台跑一个独立线程
 class OverlayService : Service() {
 
-    // 声明一个窗口大管家，专门用来把东西画在屏幕最顶层
     private lateinit var windowManager: WindowManager
+    private lateinit var params: WindowManager.LayoutParams
+    
+    private var composeView: ComposeView? = null
+    private var lifecycleOwner: MyLifecycleOwner? = null
 
-    // 生命周期钩子：服务第一次启动时调用
+    // 获取屏幕宽度，用于边缘吸附计算
+    private var screenWidth = 0
+
     override fun onCreate() {
         super.onCreate()
-
-        // 1. 获取系统的窗口大管家服务
+        
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        screenWidth = resources.displayMetrics.widthPixels
 
-        // 2. 核心黑魔法：配置悬浮窗的“物理属性”
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT, // 宽度：根据里面的内容自适应
-            WindowManager.LayoutParams.WRAP_CONTENT, // 高度：根据里面的内容自适应
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, // 权限极高的类型：盖在所有 App 之上
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, // 关键：不抢占焦点，这样你点悬浮球时，依然能滑动底层的抖音或网页
-            PixelFormat.TRANSLUCENT // 允许背景透明
+        params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
         ).apply {
-            // 设置坐标系起点在屏幕左上角
             gravity = Gravity.TOP or Gravity.START
-            x = 0   // 初始横坐标
-            y = 500 // 初始纵坐标
+            x = 0
+            y = 500
         }
 
-        // 3. 启动我们为 Compose 准备的“伪造环境”
-        val lifecycleOwner = MyLifecycleOwner()
-        lifecycleOwner.performRestore(null)
-        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        lifecycleOwner = MyLifecycleOwner()
+        lifecycleOwner?.performRestore(null)
+        lifecycleOwner?.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
 
-        // 4. 创建 Compose 视图引擎
-        val composeView = ComposeView(this).apply {
+        composeView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(lifecycleOwner)
             setViewTreeSavedStateRegistryOwner(lifecycleOwner)
-
+            
             val viewModelStore = ViewModelStore()
             setViewTreeViewModelStoreOwner(object : ViewModelStoreOwner {
                 override val viewModelStore: ViewModelStore get() = viewModelStore
             })
 
-            // 5. 开始用 Compose 画真正的 UI！
             setContent {
                 Box(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF6650a4))
-                        // 核心：添加点击事件
+                        // 🌟 1. 修复点击失效：添加 clickable (一定要放在 pointerInput 前面)
                         .clickable {
-                            // 这里是点击后的动作
-                            val intent = Intent(this@OverlayService, InputActivity::class.java)
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            startActivity(intent)
+                            try {
+                                // 点击悬浮球，启动 InputActivity
+                                val intent = Intent(this@OverlayService, InputActivity::class.java).apply {
+                                    // 因为是从 Service 启动 Activity，必须加上 NEW_TASK 标志
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                }
+                                startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(this@OverlayService, "请先创建 InputActivity!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        // 🌟 2. 边缘吸附黑魔法
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                // 当手指松开时触发
+                                onDragEnd = {
+                                    // 判断当前球在左半边还是右半边
+                                    val isLeft = params.x < screenWidth / 2
+                                    val targetX = if (isLeft) 0 else screenWidth
+                                    
+                                    // 使用原生动画让球平滑滑向边缘 (耗时 300 毫秒)
+                                    val animator = ValueAnimator.ofInt(params.x, targetX)
+                                    animator.duration = 100
+                                    animator.addUpdateListener { animation ->
+                                        params.x = animation.animatedValue as Int
+                                        try {
+                                            windowManager.updateViewLayout(this@apply, params)
+                                        } catch (e: Exception) {
+                                            // 防止在动画过程中悬浮窗被销毁导致崩溃
+                                        }
+                                    }
+                                    animator.start()
+                                }
+                            ) { change, dragAmount ->
+                                change.consume()
+                                params.x += dragAmount.x.toInt()
+                                params.y += dragAmount.y.toInt()
+                                windowManager.updateViewLayout(this@apply, params)
+                            }
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -96,28 +136,26 @@ class OverlayService : Service() {
             }
         }
 
-        // 6. 正式把视图塞进系统的窗口大管家
         windowManager.addView(composeView, params)
-
-        // 告诉 Compose：你已经活过来了，开始渲染吧！
-        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START)
-        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-
-        Toast.makeText(this, "悬浮后台服务已启动！", Toast.LENGTH_SHORT).show()
+        
+        lifecycleOwner?.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        lifecycleOwner?.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
-    // 生命周期钩子：服务被销毁时调用
     override fun onDestroy() {
         super.onDestroy()
-        // TODO: 在这里移除悬浮窗，防止内存泄漏（我们后面实现关闭功能时再写）
+        composeView?.let { view ->
+            windowManager.removeView(view)
+        }
+        lifecycleOwner?.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        
+        composeView = null
+        lifecycleOwner = null
     }
 
-    // 这是 Service 必须重写的方法，直接返回 null 即可
     override fun onBind(intent: Intent?): IBinder? = null
 }
 
-// ==============================================================
-// --- 以下是为 Compose 伪造的生命周期环境，放在文件最底部即可 ---
 // ==============================================================
 class MyLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner {
     private val lifecycleRegistry = LifecycleRegistry(this)
