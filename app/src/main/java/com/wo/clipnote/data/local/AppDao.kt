@@ -24,6 +24,9 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNote(note: NoteEntity)
 
+    @Update
+    suspend fun updateNote(note: NoteEntity)
+
     // @Delete 代表删除传进来的这条数据
     @Delete
     suspend fun deleteNote(note: NoteEntity)

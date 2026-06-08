@@ -16,6 +16,9 @@ import kotlinx.coroutines.launch
 // ViewModel 接收 DAO 作为参数，这样它就能操作数据库了
 class ClipNoteViewModel(private val dao: AppDao) : ViewModel() {
 
+    // 用于撤销删除的临时存储
+    private var lastDeletedNote: NoteEntity? = null
+
     // 1. 定义 UI 的筛选状态 (相当于 React 的 useState 或者 Vue 的 ref)
     // MutableStateFlow 表示这是一个可变的数据流，默认值是空字符串或 null
     val searchQuery = MutableStateFlow("")
@@ -71,6 +74,12 @@ class ClipNoteViewModel(private val dao: AppDao) : ViewModel() {
         }
     }
 
+    fun updateNote(note: NoteEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.updateNote(note.copy(timestamp = System.currentTimeMillis()))
+        }
+    }
+
     fun addTag(name: String, color: String) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.insertTag(TagEntity(name = name, color = color))
@@ -91,7 +100,18 @@ class ClipNoteViewModel(private val dao: AppDao) : ViewModel() {
 
     fun deleteNote(note: NoteEntity) {
         viewModelScope.launch(Dispatchers.IO) {
+            // 保存被删除的笔记，以便撤销
+            lastDeletedNote = note
             dao.deleteNote(note)
+        }
+    }
+
+    fun undoDelete() {
+        lastDeletedNote?.let { note ->
+            viewModelScope.launch(Dispatchers.IO) {
+                dao.insertNote(note)
+                lastDeletedNote = null
+            }
         }
     }
 }
