@@ -29,10 +29,6 @@ class MainActivity : ComponentActivity() {
                 Uri.parse("package:$packageName")
             )
             startActivity(intent)
-        } else {
-            // 如果已经有权限了，就在后台把我们的悬浮球跑起来！
-            val serviceIntent = Intent(this, com.wo.clipnote.service.OverlayService::class.java)
-            startService(serviceIntent)
         }
         // ==========================================
 

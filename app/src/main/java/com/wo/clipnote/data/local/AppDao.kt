@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 // @Dao 告诉系统这是一个操作数据库的接口
@@ -35,4 +36,10 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTag(tag: TagEntity)
+
+    @Update
+    suspend fun updateTag(tag: TagEntity)
+
+    @Delete
+    suspend fun deleteTag(tag: TagEntity)
 }
