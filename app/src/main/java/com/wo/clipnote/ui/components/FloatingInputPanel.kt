@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -34,11 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.wo.clipnote.data.local.TagEntity
 
 @Composable
 fun FloatingInputPanel(
     initialDraft: String,
-    tags: List<String>,
+    tags: List<TagEntity>,
     sources: List<String>,
     onDraftChange: (String) -> Unit,
     onCancel: () -> Unit,
@@ -67,18 +67,24 @@ fun FloatingInputPanel(
                 .heightIn(min = 220.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ChipSelectorRow(
-                title = "标签",
-                options = tags,
-                selectedOptions = selectedTags,
-                onOptionToggle = { option ->
-                    selectedTags = if (selectedTags.contains(option)) {
-                        selectedTags - option
-                    } else {
-                        selectedTags + option
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "标签",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                TagSelectorWithSearch(
+                    allTags = tags,
+                    selectedTags = selectedTags.toList(),
+                    onTagClick = { tagName ->
+                        selectedTags = if (selectedTags.contains(tagName)) {
+                            selectedTags - tagName
+                        } else {
+                            selectedTags + tagName
+                        }
                     }
-                }
-            )
+                )
+            }
 
             ChipSelectorRow(
                 title = "来源",
@@ -176,7 +182,6 @@ private fun ChipSelectorRow(
                     selected = selectedOptions.contains(option),
                     onClick = { onOptionToggle(option) },
                     label = { Text(text = option) },
-                    modifier = Modifier.widthIn(min = 48.dp),
                     colors = FilterChipDefaults.filterChipColors(),
                     shape = RoundedCornerShape(10.dp)
                 )

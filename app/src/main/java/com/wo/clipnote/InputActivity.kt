@@ -49,7 +49,6 @@ class InputActivity : ComponentActivity() {
             MaterialTheme {
                 val panelMaxHeight = rememberPanelMaxHeight()
                 val tagEntities by viewModel.allTags.collectAsState(initial = emptyList())
-                val tagNames = tagEntities.map { it.name }
                 val sources = remember { listOf("微信", "网页", "小红书") }
 
                 Box(
@@ -81,7 +80,7 @@ class InputActivity : ComponentActivity() {
                     ) {
                         FloatingInputPanel(
                             initialDraft = initialDraft,
-                            tags = tagNames,
+                            tags = tagEntities,
                             sources = sources,
                             onDraftChange = { latestDraft ->
                                 lifecycleScope.launch(Dispatchers.IO) {
