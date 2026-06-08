@@ -31,6 +31,7 @@ import androidx.lifecycle.lifecycleScope
 import com.wo.clipnote.data.local.AppDatabase
 import com.wo.clipnote.ui.components.FloatingInputPanel
 import com.wo.clipnote.ui.screen.ClipNoteViewModel
+import com.wo.clipnote.ui.theme.ClipNoteTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -46,7 +47,7 @@ class InputActivity : ComponentActivity() {
         val viewModel = ClipNoteViewModel(dao)
 
         setContent {
-            MaterialTheme {
+            ClipNoteTheme {
                 val panelMaxHeight = rememberPanelMaxHeight()
                 val tagEntities by viewModel.allTags.collectAsState(initial = emptyList())
                 val sources = remember { listOf("微信", "网页", "小红书") }

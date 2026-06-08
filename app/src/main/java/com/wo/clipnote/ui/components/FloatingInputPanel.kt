@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -59,72 +60,89 @@ fun FloatingInputPanel(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 220.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "标签",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp)
+                    .heightIn(min = 220.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "标签",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    TagSelectorWithSearch(
+                        allTags = tags,
+                        selectedTags = selectedTags.toList(),
+                        onTagClick = { tagName ->
+                            selectedTags = if (selectedTags.contains(tagName)) {
+                                selectedTags - tagName
+                            } else {
+                                selectedTags + tagName
+                            }
+                        }
+                    )
+                }
+
+                ChipSelectorRow(
+                    title = "来源",
+                    options = sources,
+                    selectedOptions = selectedSource?.let { setOf(it) }.orEmpty(),
+                    onOptionToggle = { option ->
+                        selectedSource = if (selectedSource == option) null else option
+                    }
                 )
-                TagSelectorWithSearch(
-                    allTags = tags,
-                    selectedTags = selectedTags.toList(),
-                    onTagClick = { tagName ->
-                        selectedTags = if (selectedTags.contains(tagName)) {
-                            selectedTags - tagName
-                        } else {
-                            selectedTags + tagName
+
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = {
+                        content = it
+                        onDraftChange(it)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 136.dp, max = 220.dp),
+                    label = { Text("记录灵感") },
+                    placeholder = {
+                        Text(
+                            "输入此刻想保存的内容…",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    shape = MaterialTheme.shapes.large,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    ),
+                    trailingIcon = {
+                        if (content.isNotEmpty()) {
+                            IconButton(onClick = {
+                                content = ""
+                                onDraftChange("")
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "清空输入内容",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 )
             }
-
-            ChipSelectorRow(
-                title = "来源",
-                options = sources,
-                selectedOptions = selectedSource?.let { setOf(it) }.orEmpty(),
-                onOptionToggle = { option ->
-                    selectedSource = if (selectedSource == option) null else option
-                }
-            )
-
-            OutlinedTextField(
-                value = content,
-                onValueChange = {
-                    content = it
-                    onDraftChange(it)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp, max = 200.dp),
-                label = { Text("记录灵感...") },
-                placeholder = { Text("输入此刻想保存的内容…", style = MaterialTheme.typography.bodyMedium) },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                ),
-                trailingIcon = {
-                    if (content.isNotEmpty()) {
-                        IconButton(onClick = {
-                            content = ""
-                            onDraftChange("")
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "清空输入内容",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            )
         }
 
         Row(
@@ -149,7 +167,7 @@ fun FloatingInputPanel(
                         onDraftChange("")
                     }
                 },
-                shape = RoundedCornerShape(8.dp),
+                shape = MaterialTheme.shapes.medium,
                 enabled = content.isNotBlank()
             ) {
                 Text("保存")
@@ -165,11 +183,11 @@ private fun ChipSelectorRow(
     selectedOptions: Set<String>,
     onOptionToggle: (String) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = title,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         LazyRow(
@@ -182,8 +200,21 @@ private fun ChipSelectorRow(
                     selected = selectedOptions.contains(option),
                     onClick = { onOptionToggle(option) },
                     label = { Text(text = option) },
-                    colors = FilterChipDefaults.filterChipColors(),
-                    shape = RoundedCornerShape(10.dp)
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selectedOptions.contains(option),
+                        borderColor = MaterialTheme.colorScheme.outlineVariant,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                        disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        disabledSelectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
         }

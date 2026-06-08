@@ -1,5 +1,6 @@
 package com.wo.clipnote.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -76,6 +78,7 @@ fun EditNoteScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("编辑笔记") },
@@ -109,75 +112,101 @@ fun EditNoteScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
             ) {
-                Text(
-                    text = "笔记内容",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Surface(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .heightIn(min = 280.dp),
-                    shape = MaterialTheme.shapes.large,
-                    tonalElevation = 1.dp,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        .fillMaxSize()
+                        .padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    val editorScrollState = rememberScrollState()
-                    Box(
+                    Text(
+                        text = "笔记内容",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Surface(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(editorScrollState)
-                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .heightIn(min = 280.dp),
+                        shape = MaterialTheme.shapes.large,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                        color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
-                        if (content.text.isEmpty()) {
-                            Text(
-                                text = "请输入完整笔记内容",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        val editorScrollState = rememberScrollState()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(editorScrollState)
+                                .padding(horizontal = 16.dp, vertical = 14.dp)
+                        ) {
+                            if (content.text.isEmpty()) {
+                                Text(
+                                    text = "请输入完整笔记内容",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            BasicTextField(
+                                value = content,
+                                onValueChange = { content = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(contentFocusRequester),
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             )
                         }
-
-                        BasicTextField(
-                            value = content,
-                            onValueChange = { content = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(contentFocusRequester),
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        )
                     }
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "标签",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                TagSelectorWithSearch(
-                    allTags = allTags,
-                    selectedTags = selectedTags,
-                    onTagClick = { tagName ->
-                        selectedTags = if (selectedTags.contains(tagName)) {
-                            selectedTags - tagName
-                        } else {
-                            selectedTags + tagName
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "标签",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    TagSelectorWithSearch(
+                        allTags = allTags,
+                        selectedTags = selectedTags,
+                        onTagClick = { tagName ->
+                            selectedTags = if (selectedTags.contains(tagName)) {
+                                selectedTags - tagName
+                            } else {
+                                selectedTags + tagName
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
 
             OutlinedTextField(
@@ -186,7 +215,15 @@ fun EditNoteScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 label = { Text("来源") },
-                placeholder = { Text("请输入来源，例如小红书 / 微信 / 网页") }
+                placeholder = { Text("请输入来源，例如小红书 / 微信 / 网页") },
+                shape = MaterialTheme.shapes.large,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    cursorColor = MaterialTheme.colorScheme.primary
+                )
             )
         }
     }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,8 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.wo.clipnote.ui.theme.ClipNoteTheme
+import com.wo.clipnote.ui.theme.Green600
 
 // 注意：如果你还没有创建 InputActivity，下面这行点击跳转的代码会标红。
 // 请确保你在 com.wo.clipnote 包下创建了 InputActivity.kt
@@ -82,56 +85,54 @@ class OverlayService : Service() {
             })
 
             setContent {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF6650a4))
-                        // 🌟 1. 修复点击失效：添加 clickable (一定要放在 pointerInput 前面)
-                        .clickable {
-                            try {
-                                // 点击悬浮球，启动 InputActivity
-                                val intent = Intent(this@OverlayService, InputActivity::class.java).apply {
-                                    // 因为是从 Service 启动 Activity，必须加上 NEW_TASK 标志
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                }
-                                startActivity(intent)
-                            } catch (e: Exception) {
-                                Toast.makeText(this@OverlayService, "请先创建 InputActivity!", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                        // 🌟 2. 边缘吸附黑魔法
-                        .pointerInput(Unit) {
-                            detectDragGestures(
-                                // 当手指松开时触发
-                                onDragEnd = {
-                                    // 判断当前球在左半边还是右半边
-                                    val isLeft = params.x < screenWidth / 2
-                                    val targetX = if (isLeft) 0 else screenWidth
-                                    
-                                    // 使用原生动画让球平滑滑向边缘 (耗时 300 毫秒)
-                                    val animator = ValueAnimator.ofInt(params.x, targetX)
-                                    animator.duration = 100
-                                    animator.addUpdateListener { animation ->
-                                        params.x = animation.animatedValue as Int
-                                        try {
-                                            windowManager.updateViewLayout(this@apply, params)
-                                        } catch (e: Exception) {
-                                            // 防止在动画过程中悬浮窗被销毁导致崩溃
-                                        }
+                ClipNoteTheme {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(Green600)
+                            .clickable {
+                                try {
+                                    val intent = Intent(this@OverlayService, InputActivity::class.java).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                     }
-                                    animator.start()
+                                    startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(this@OverlayService, "请先创建 InputActivity!", Toast.LENGTH_SHORT).show()
                                 }
-                            ) { change, dragAmount ->
-                                change.consume()
-                                params.x += dragAmount.x.toInt()
-                                params.y += dragAmount.y.toInt()
-                                windowManager.updateViewLayout(this@apply, params)
                             }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("记", color = Color.White)
+                            .pointerInput(Unit) {
+                                detectDragGestures(
+                                    onDragEnd = {
+                                        val isLeft = params.x < screenWidth / 2
+                                        val targetX = if (isLeft) 0 else screenWidth
+
+                                        val animator = ValueAnimator.ofInt(params.x, targetX)
+                                        animator.duration = 100
+                                        animator.addUpdateListener { animation ->
+                                            params.x = animation.animatedValue as Int
+                                            try {
+                                                windowManager.updateViewLayout(this@apply, params)
+                                            } catch (e: Exception) {
+                                            }
+                                        }
+                                        animator.start()
+                                    }
+                                ) { change, dragAmount ->
+                                    change.consume()
+                                    params.x += dragAmount.x.toInt()
+                                    params.y += dragAmount.y.toInt()
+                                    windowManager.updateViewLayout(this@apply, params)
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "+",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }

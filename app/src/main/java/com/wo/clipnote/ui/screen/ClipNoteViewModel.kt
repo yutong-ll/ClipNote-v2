@@ -13,16 +13,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// ViewModel 接收 DAO 作为参数，这样它就能操作数据库了
 class ClipNoteViewModel(private val dao: AppDao) : ViewModel() {
 
-    // 用于撤销删除的临时存储
     private var lastDeletedNote: NoteEntity? = null
 
-    // 1. 定义 UI 的筛选状态 (相当于 React 的 useState 或者 Vue 的 ref)
-    // MutableStateFlow 表示这是一个可变的数据流，默认值是空字符串或 null
     val searchQuery = MutableStateFlow("")
     val selectedTag = MutableStateFlow<String?>(null)
+    val selectedSource = MutableStateFlow<String?>(null)
 
     val allTags: StateFlow<List<TagEntity>> = dao.getAllTags().stateIn(
         scope = viewModelScope,
@@ -30,13 +27,12 @@ class ClipNoteViewModel(private val dao: AppDao) : ViewModel() {
         initialValue = emptyList()
     )
 
-    // 2. 核心魔法：组合数据流 (相当于 Vue 的 computed 计算属性)
-    // 这里我们将数据库里的原始数据 (dao.getAllNotes()) 和上面的搜索词、标签组合起来
     val filteredNotes: StateFlow<List<NoteEntity>> = combine(
         dao.getAllNotes(),
         searchQuery,
-        selectedTag
-    ) { notes, query, tag ->
+        selectedTag,
+        selectedSource
+    ) { notes, query, tag, source ->
         var result = notes
 
         if (query.isNotBlank()) {
@@ -45,6 +41,10 @@ class ClipNoteViewModel(private val dao: AppDao) : ViewModel() {
 
         if (tag != null) {
             result = result.filter { it.tags.contains(tag) }
+        }
+
+        if (source != null) {
+            result = result.filter { it.source.equals(source, ignoreCase = true) }
         }
 
         result
@@ -60,6 +60,10 @@ class ClipNoteViewModel(private val dao: AppDao) : ViewModel() {
 
     fun updateSelectedTag(tag: String?) {
         selectedTag.value = tag
+    }
+
+    fun updateSelectedSource(source: String?) {
+        selectedSource.value = source
     }
 
     fun addNote(content: String, tags: List<String>, source: String? = null) {
@@ -100,7 +104,6 @@ class ClipNoteViewModel(private val dao: AppDao) : ViewModel() {
 
     fun deleteNote(note: NoteEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            // 保存被删除的笔记，以便撤销
             lastDeletedNote = note
             dao.deleteNote(note)
         }

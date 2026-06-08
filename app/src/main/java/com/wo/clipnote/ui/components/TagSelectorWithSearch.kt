@@ -1,24 +1,31 @@
 package com.wo.clipnote.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.wo.clipnote.data.local.TagEntity
@@ -52,19 +60,44 @@ fun TagSelectorWithSearch(
                 onClick = { onTagClick(tag.name) },
                 label = { Text(tag.name) },
                 modifier = Modifier.widthIn(min = 48.dp),
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp),
+                leadingIcon = {
+                    BoxColorDot(tag.color)
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    iconColor = MaterialTheme.colorScheme.primary,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedTags.contains(tag.name),
+                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                    disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    disabledSelectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                )
             )
         }
 
         item {
-            IconButton(
-                onClick = { showDialog = true },
-                modifier = Modifier.size(36.dp)
+            Surface(
+                modifier = Modifier.size(36.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = "搜索或展开标签"
-                )
+                IconButton(onClick = { showDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "搜索或展开标签",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -109,7 +142,15 @@ private fun TagSearchDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     label = { Text("搜索标签") },
-                    placeholder = { Text("输入标签名") }
+                    placeholder = { Text("输入标签名") },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
                 )
 
                 LazyColumn(
@@ -133,7 +174,16 @@ private fun TagSearchDialog(
                                 onClick = { onTagClick(tag.name) },
                                 label = { Text(tag.name) },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(14.dp),
+                                leadingIcon = { BoxColorDot(tag.color) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                    iconColor = MaterialTheme.colorScheme.primary,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                                )
                             )
                         }
                     }
@@ -146,4 +196,21 @@ private fun TagSearchDialog(
             }
         }
     )
+}
+
+@Composable
+private fun BoxColorDot(colorHex: String) {
+    Surface(
+        modifier = Modifier
+            .size(12.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = CircleShape
+            ),
+        shape = CircleShape,
+        color = parseTagColor(colorHex),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {}
 }

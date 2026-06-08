@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import com.wo.clipnote.data.local.AppDatabase
 import com.wo.clipnote.ui.screen.ClipNoteViewModel
 import com.wo.clipnote.ui.screen.MainScreen
+import com.wo.clipnote.ui.theme.ClipNoteTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,7 +44,7 @@ class MainActivity : ComponentActivity() {
 
         // 3. 将 UI 挂载到屏幕上
         setContent {
-            MaterialTheme {
+            ClipNoteTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
